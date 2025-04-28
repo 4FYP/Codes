@@ -1,0 +1,53 @@
+from selenium import webdriver
+from openpyxl import Workbook
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+import time
+from bs4 import BeautifulSoup
+import pandas as pd
+# Setup Chrome driver (update the path if needed)
+driver = webdriver.Chrome()
+
+# Step 1: Open the website
+driver.get("https://www.olx.com.pk/")
+
+# Step 2: Accept cookies if needed (depends on region)
+try:
+    consent = driver.find_element(By.XPATH, '//button/div[text()="Allow"]')
+    consent.click()
+except:
+    pass  # skip if no cookie prompt
+
+# Step 3: Find the search box and enter query
+search_box = driver.find_element(By.XPATH, '//*[@id="body-wrapper"]/div[1]/header/div[2]/div[2]/div/div/div/div/div[1]/input')
+search_box.send_keys("Bikes")
+search_box.send_keys(Keys.RETURN)  # Press Enter
+
+# Step 4: Wait for results to load
+time.sleep(10)  # Or use WebDriverWait for better practice
+
+getData=driver.find_element(By.CSS_SELECTOR,'._1aad128c.ec65250d')
+text=getData.text
+text=text.split("Featured")
+for t in text:
+    print(str(t)+"\n")
+
+# Find all listings
+listings = driver.find_elements(By.CSS_SELECTOR, "li[aria-label='Listing'] a[title]")
+
+# Extract hrefs
+hrefs = [a.get_attribute('href') for a in listings if a.get_attribute('href')]
+for link in hrefs:
+    print(str(link))
+# Find maximum length
+max_len = max(len(text), len(hrefs))
+
+# Extend both lists to same size
+text += [""] * (max_len - len(text))
+hrefs += [""] * (max_len - len(hrefs))
+data={'Text':text, 'Hrefs':hrefs}
+dt=pd.DataFrame(data)
+dt.to_excel('file_name.xlsx')
+
+# Step 5: Close the browser
+driver.quit()
